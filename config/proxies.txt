@@ -1,0 +1,17 @@
+# Proxy Configuration File
+# Format: host:port or host:port:username:password for authenticated proxies
+# Remove the '#' character at the beginning of the line to activate a proxy
+
+# Example HTTP proxies (these are examples only, add your real proxies below)
+# 192.168.1.1:8080
+# proxy1.example.com:3128
+# proxy2.provider.com:8080
+
+# Example authenticated proxies (if your proxies require authentication)
+# proxy.example.com:8080:username:password
+
+# You can add your actual proxies below this line
+# Make sure to remove the '#' from the beginning of the line
+
+# Don't have proxies yet? You can find proxy providers online, or
+# use services like BrightData, Oxylabs, Smartproxy, etc.

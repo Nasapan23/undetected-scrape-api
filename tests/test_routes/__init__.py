@@ -1,0 +1,3 @@
+"""
+Test routes package initialization
+""" 

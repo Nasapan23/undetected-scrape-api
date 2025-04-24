@@ -1,0 +1,8 @@
+# Extra stealth requirements
+playwright-stealth==1.0.5
+undetected-playwright==0.0.5
+playwright-extra==0.1.0
+pyee>=8.0.0
+
+# Optional: If you want to use 2captcha for solving captchas (requires API key)
+# 2captcha-python==1.1.3 
