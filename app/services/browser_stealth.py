@@ -18,7 +18,7 @@ from app.utils.fp_evasion import apply_fingerprint_evasion, generate_consistent_
 
 # Check if stealth plugins are available
 STEALTH_AVAILABLE = False
-EXTRA_AVAILABLE = False
+PYPPETEER_STEALTH_AVAILABLE = False
 
 try:
     import playwright_stealth
@@ -28,11 +28,11 @@ except ImportError:
     logger.warning("playwright-stealth not installed, using basic stealth techniques")
 
 try:
-    from playwright_extra import stealth
-    EXTRA_AVAILABLE = True
-    logger.info("playwright-extra stealth plugin available")
+    import pyppeteer_stealth
+    PYPPETEER_STEALTH_AVAILABLE = True
+    logger.info("pyppeteer-stealth available for fallback techniques")
 except ImportError:
-    logger.warning("playwright-extra not installed, using basic stealth techniques")
+    logger.warning("pyppeteer-stealth not installed, using basic stealth techniques")
 
 # Attempt to import undetected-playwright
 UNDETECTED_AVAILABLE = False
@@ -214,13 +214,36 @@ async def apply_stealth_to_page(page):
         except Exception as e:
             logger.error(f"Error applying playwright-stealth: {e}")
     
-    # Apply playwright-extra stealth if available
-    elif EXTRA_AVAILABLE:
+    # If available, adapt techniques from pyppeteer-stealth (as a fallback)
+    elif PYPPETEER_STEALTH_AVAILABLE:
         try:
-            logger.info("Applying playwright-extra stealth")
-            await stealth.stealth_async(page)
+            logger.info("Adapting techniques from pyppeteer-stealth")
+            # We can't use pyppeteer_stealth directly with playwright, but we can
+            # apply similar JavaScript evasion techniques
+            await page.add_init_script("""
+            () => {
+                // User-Agent vendor customization
+                Object.defineProperty(navigator, 'vendor', {
+                    get: () => 'Google Inc.',
+                });
+                
+                // WebGL vendor spoofing
+                const getParameter = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                    // UNMASKED_VENDOR_WEBGL
+                    if (parameter === 37445) {
+                        return 'Google Inc.';
+                    }
+                    // UNMASKED_RENDERER_WEBGL
+                    if (parameter === 37446) {
+                        return 'ANGLE (Intel, Intel(R) UHD Graphics Direct3D11 vs_5_0 ps_5_0)';
+                    }
+                    return getParameter.apply(this, arguments);
+                };
+            }
+            """)
         except Exception as e:
-            logger.error(f"Error applying playwright-extra stealth: {e}")
+            logger.error(f"Error applying pyppeteer-stealth techniques: {e}")
     
     # Apply additional anti-detection measures
     await apply_additional_stealth_measures(page)

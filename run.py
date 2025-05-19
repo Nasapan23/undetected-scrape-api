@@ -1,16 +1,9 @@
 #!/usr/bin/env python3
 """
-Entry point for the Undetectable Web Scraping API
+Development entry point for the Undetectable Web Scraping API
 """
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
-
-from app import create_app
-
-app = create_app()
+from wsgi import app
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))

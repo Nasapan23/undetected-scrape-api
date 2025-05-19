@@ -186,24 +186,43 @@ def is_blocked_page(page):
         # to avoid false positives
         return False
 
-@bp.route("/", methods=["GET"])
+@bp.route("/", methods=["GET", "POST"])
 def scrape():
     """
     Scrape a webpage with anti-detection measures
     
-    Query Parameters:
+    Query Parameters (GET):
         url (str): The URL to scrape
         wait_time (int, optional): Custom wait time in seconds
         retry (int, optional): Number of retry attempts
+    
+    JSON Body Parameters (POST):
+        url (str): The URL to scrape
+        wait_time (int, optional): Custom wait time in seconds
+        retry (int, optional): Number of retry attempts
+        use_stealth (bool, optional): Enable additional stealth measures
+        selector (str, optional): CSS selector to extract content
         
     Returns:
         JSON response with scraped data
     """
     try:
-        # Get URL and parameters from request
-        url = request.args.get("url")
-        wait_time = request.args.get("wait_time", default=0, type=int)
-        retry_attempts = request.args.get("retry", default=2, type=int)
+        # Check if request is POST with JSON
+        if request.method == "POST" and request.is_json:
+            # Get parameters from JSON body
+            data = request.get_json()
+            url = data.get("url")
+            wait_time = data.get("wait_time", 0)
+            retry_attempts = data.get("retry", 2)
+            use_stealth = data.get("use_stealth", True)
+            selector = data.get("selector")
+        else:
+            # Get URL and parameters from request args (GET method)
+            url = request.args.get("url")
+            wait_time = request.args.get("wait_time", default=0, type=int)
+            retry_attempts = request.args.get("retry", default=2, type=int)
+            use_stealth = request.args.get("use_stealth", default=True, type=lambda v: v.lower() == 'true' if isinstance(v, str) else bool(v))
+            selector = request.args.get("selector")
         
         # Validate URL
         if not url:
@@ -317,19 +336,46 @@ def scrape():
                 # Extract data after successfully loading
                 data = {
                     "title": page.title(),
-                    "content": page.inner_text("body"),
-                    "links": page.evaluate("""() => {
-                        return Array.from(document.querySelectorAll('a')).map(a => a.href);
-                    }""")
+                    "url": page.url,
+                    "status": "success"
                 }
+                
+                # Get full HTML content
+                html_content = page.content()
+                
+                # If a specific selector is provided, extract that content
+                if selector:
+                    try:
+                        element = page.query_selector(selector)
+                        if element:
+                            selected_content = element.inner_html()
+                            data["selected_content"] = selected_content
+                        else:
+                            data["selected_content"] = ""
+                            data["selector_warning"] = f"Selector '{selector}' not found"
+                    except Exception as se:
+                        logger.error(f"Error with selector {selector}: {str(se)}")
+                        data["selector_warning"] = f"Error using selector: {str(se)}"
+                        data["selected_content"] = ""
+                else:
+                    # Extract basic content from the page
+                    data["content"] = page.inner_text("body")
+                
+                # Always include the full HTML for complete processing
+                data["html"] = html_content
+                
+                # Extract all links
+                data["links"] = page.evaluate("""() => {
+                    return Array.from(document.querySelectorAll('a')).map(a => a.href);
+                }""")
                 
                 # If we previously got a Cloudflare page, and now we have a very short content,
                 # it might still be a Cloudflare page with different text
-                if got_cloudflare_page and len(data["content"]) < 500:
-                    logger.warning(f"Got suspiciously short content after Cloudflare ({len(data['content'])} chars)")
+                if got_cloudflare_page and len(data.get("content", "")) < 500:
+                    logger.warning(f"Got suspiciously short content after Cloudflare ({len(data.get('content', ''))} chars)")
                     # Check if it still contains any challenge-like text
                     challenge_indicators = ["ray id", "performance", "security", "check", "wait", "human"]
-                    if any(indicator in data["content"].lower() for indicator in challenge_indicators):
+                    if any(indicator in data.get("content", "").lower() for indicator in challenge_indicators):
                         logger.warning("Content appears to be a challenge page")
                         if current_attempt < max_attempts - 1:
                             # Try a much longer wait before the next attempt
@@ -338,8 +384,8 @@ def scrape():
                             raise Exception("Still on challenge page, retrying with extended wait")
                 
                 # Check if we got meaningful data
-                if len(data["content"]) < 50 and current_attempt < max_attempts - 1:
-                    logger.warning(f"Got suspiciously short content ({len(data['content'])} chars), may be blocked")
+                if len(data.get("content", "")) < 50 and current_attempt < max_attempts - 1:
+                    logger.warning(f"Got suspiciously short content ({len(data.get('content', ''))} chars), may be blocked")
                     raise Exception("Received limited content, may be blocked")
                 
                 # Intelligently manage cookies to maintain sessions

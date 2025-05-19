@@ -56,22 +56,51 @@ def install_requirements():
     print_colored("Installing stealth plugins and dependencies...", "blue")
     
     try:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)], check=True)
-        print_colored("✓ Successfully installed stealth plugins", "green")
-    except subprocess.CalledProcessError as e:
+        # First update pip
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=True)
+        print_colored("✓ Upgraded pip to latest version", "green")
+        
+        # Try installing with --no-dependencies first
+        try:
+            print_colored("Attempting to install packages individually...", "blue")
+            with open(REQUIREMENTS_FILE, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        try:
+                            subprocess.run([sys.executable, "-m", "pip", "install", line], check=True)
+                            print_colored(f"✓ Installed {line}", "green")
+                        except subprocess.CalledProcessError:
+                            print_colored(f"Warning: Couldn't install {line}, will try alternative", "yellow")
+        except Exception as e:
+            print_colored(f"Warning: Error during individual installation: {e}", "yellow")
+            
+        # Now try the full requirements file
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)], check=True)
+            print_colored("✓ Successfully installed stealth plugins", "green")
+        except subprocess.CalledProcessError as e:
+            print_colored(f"Warning: Some packages could not be installed from requirements file", "yellow")
+            print_colored("    Some stealth features may be limited, but the application will still work", "yellow")
+            print_colored(f"    Original error: {e}", "yellow")
+    except Exception as e:
         print_colored(f"Error installing requirements: {e}", "red")
-        sys.exit(1)
+        print_colored("The application will still work but with limited stealth capabilities", "yellow")
 
 def install_playwright_browsers():
     """Install Playwright browsers"""
     print_colored("Installing Playwright browsers...", "blue")
     
     try:
-        subprocess.run([sys.executable, "-m", "playwright", "install"], check=True)
+        # Install only chromium to save space and time
+        subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+        subprocess.run([sys.executable, "-m", "playwright", "install-deps", "chromium"], check=True)
         print_colored("✓ Successfully installed Playwright browsers", "green")
     except subprocess.CalledProcessError as e:
         print_colored(f"Error installing Playwright browsers: {e}", "red")
-        sys.exit(1)
+        print_colored("Please try installing manually with:", "yellow")
+        print_colored("    python -m playwright install chromium", "yellow")
+        print_colored("    python -m playwright install-deps chromium", "yellow")
 
 def create_data_dirs():
     """Create necessary data directories"""

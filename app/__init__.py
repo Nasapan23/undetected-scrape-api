@@ -55,9 +55,20 @@ def create_app(test_config=None):
     # Enable CORS
     CORS(app)
     
+    # Set up monitoring if in production
+    if os.getenv("FLASK_ENV") == "production":
+        from prometheus_flask_exporter import PrometheusMetrics
+        metrics = PrometheusMetrics(app)
+        # Static information as metric
+        metrics.info('app_info', 'Application info', version='1.0.0')
+    
     # Register blueprints
     from app.routes.scrape import bp as scrape_bp
     app.register_blueprint(scrape_bp)
+    
+    # Register health check blueprint
+    from app.routes.health import bp as health_bp
+    app.register_blueprint(health_bp)
     
     # Initialize browser service
     from app.services.browser import init_browser

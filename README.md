@@ -20,11 +20,37 @@ git clone https://github.com/yourusername/undetected-scrape-api
 cd undetected-scrape-api
 ```
 
+### Standard Installation
+
 Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
+
+### Docker Installation (Recommended for Production)
+
+This project is Docker-ready for production deployment. To get started:
+
+1. Copy the environment example file:
+   ```bash
+   cp env.example .env
+   ```
+   
+2. Edit the `.env` file with your desired configuration
+
+3. Run the deployment script:
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
+   
+4. Or manually run with Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+
+The API will be available at http://localhost:5000 with health monitoring at http://localhost:5000/health
 
 ## Quick Start
 
@@ -247,4 +273,39 @@ This software is for educational purposes only. Ensure you use this tool respons
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. 
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Troubleshooting
+
+### Dependency Installation Issues
+
+If you encounter issues with package dependencies during installation:
+
+1. Try updating pip first:
+   ```bash
+   pip install --upgrade pip
+   ```
+
+2. Install packages individually if needed:
+   ```bash
+   cat requirements.txt | grep -v "^#" | xargs -n 1 pip install
+   ```
+
+3. For Playwright-related issues, install only what's needed:
+   ```bash
+   playwright install chromium
+   playwright install-deps chromium
+   ```
+
+### Docker Build Issues
+
+If Docker build fails due to dependency conflicts:
+
+1. Try building with the `--no-cache` option:
+   ```bash
+   docker-compose build --no-cache
+   ```
+
+2. Ensure your Docker daemon has sufficient resources allocated
+
+3. Check for network issues that might affect downloading packages 

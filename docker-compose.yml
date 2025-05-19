@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  scrape-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: undetected-scrape-api
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    environment:
+      - FLASK_ENV=production
+      - HEADLESS=true
+      - BROWSER_TYPE=chromium
+      - USER_AGENT_ROTATION=true
+      - USE_PROXIES=false
+      - REQUEST_TIMEOUT=30
+      - NAVIGATION_TIMEOUT=60000
+      - MAX_RETRIES=3
+      # Add your custom environment variables here
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
+  # Uncomment to add monitoring with Prometheus
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+  #     - '--web.console.templates=/usr/share/prometheus/consoles'
+  #   restart: unless-stopped
+
+# Uncomment for persistent volumes with prometheus
+# volumes:
+#   prometheus_data: {} 

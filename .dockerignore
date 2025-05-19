@@ -1,0 +1,82 @@
+# Version control
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+env.example
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environment
+venv/
+ENV/
+env/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Testing
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Docker volumes
+data/*
+!data/.gitkeep
+
+# Documentation
+docs/
+
+# Repository files
+README.md
+CONTRIBUTING.md
+LICENSE
+cursor_rules.md
+Website-uri
+
+# Docker files
+docker-compose*.yml
+*.md
+
+# Browser automation cache folders
+.pyppeteer/
+.cache/
+.config/
+.ms-playwright/
+browser_data/ 
